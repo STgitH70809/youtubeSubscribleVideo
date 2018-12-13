@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.HashMap;
 
 
-public class youtubeSubVideo {
+public class YoutubeSubVideo {
 
     /** Application name. */
     private static final String APPLICATION_NAME = "youtubeSubVideo";
@@ -34,8 +34,7 @@ public class youtubeSubVideo {
     private static FileDataStoreFactory DATA_STORE_FACTORY;
 
     /** Global instance of the JSON factory. */
-    private static final JsonFactory JSON_FACTORY =
-            JacksonFactory.getDefaultInstance();
+    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 
     /** Global instance of the HTTP transport. */
     private static HttpTransport HTTP_TRANSPORT;
@@ -67,20 +66,17 @@ public class youtubeSubVideo {
     public static Credential authorize() throws IOException {
         // Load client secrets.
         InputStream in =
-                youtubeSubVideo.class.getResourceAsStream("/client_secret.json");
+                YoutubeSubVideo.class.getResourceAsStream("/client_secret.json");
         GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
         // Build flow and trigger user authorization request.
         GoogleAuthorizationCodeFlow flow =
-                new GoogleAuthorizationCodeFlow.Builder(
-                        HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
+                new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
                         .setDataStoreFactory(DATA_STORE_FACTORY)
                         .setAccessType("offline")
                         .build();
-        Credential credential = new AuthorizationCodeInstalledApp(
-                flow, new LocalServerReceiver()).authorize("user");
-        return credential;
+        return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
     }
 
     /**
@@ -99,30 +95,23 @@ public class youtubeSubVideo {
     public static void main(String[] args) throws IOException {
         YouTube youtube = getYouTubeService();
         try {
-
                 HashMap<String, String> parameters = new HashMap<String, String>();
                 parameters.put("part", "snippet,contentDetails");
                 parameters.put("vid", "id,snippet");
-
-                YouTube.Subscriptions.List subscriptionsListMySubscriptionsRequest = youtube.subscriptions().list(parameters.get("part").toString());
-
-                subscriptionsListMySubscriptionsRequest.setMine(true);
-                SubscriptionListResponse response = subscriptionsListMySubscriptionsRequest.execute();
+                YouTube.Subscriptions.List mySubscribeList = youtube.subscriptions().list(parameters.get("part")).setMine(true);
+                SubscriptionListResponse response = mySubscribeList.execute();
                 for (Subscription channel: response.getItems()) {
-                    YouTube.Search.List videos = youtube.search().list(parameters.get("vid").toString());
-                    videos.setChannelId(channel.getSnippet().getResourceId().getChannelId());
-                    videos.setMaxResults(Long.parseLong("50"));//?????
-
+                    YouTube.Search.List videos = youtube.search().list(parameters.get("vid"))
+                                                                .setChannelId(channel.getSnippet().getResourceId().getChannelId())
+                                                                .setMaxResults(Long.parseLong("50"));
                     SearchListResponse videoResponse = videos.execute();
                     SearchResult  latestVideo = getLatestVideo(videoResponse.getItems());
-
                     System.out.println("________________________________________");
                     System.out.println("Channel title : "+ channel.getSnippet().getTitle());
                     System.out.println("ChannelId : "+ channel.getSnippet().getResourceId().getChannelId());
                     System.out.println("Lastest Video title : " + latestVideo.getSnippet().getTitle());
                     System.out.println("Link: " + "https://www.youtube.com/watch?v=" + latestVideo.getId().getVideoId());
                 }
-
         } catch (GoogleJsonResponseException e) {
             e.printStackTrace();
             System.err.println("There was a service error: " +
@@ -131,13 +120,14 @@ public class youtubeSubVideo {
             t.printStackTrace();
         }
     }
+
     public static SearchResult getLatestVideo(List<SearchResult> target){
-        SearchResult ret = target.get(0);
-        for(int i=1 ; i<target.size() ;i++){
-            if(ret.getSnippet().getPublishedAt().getValue() < target.get(i).getSnippet().getPublishedAt().getValue()){
-                ret = target.get(i);
+        SearchResult searchResult = target.get(0);
+        for(int i=1; i<target.size(); i++){
+            if(searchResult.getSnippet().getPublishedAt().getValue() < target.get(i).getSnippet().getPublishedAt().getValue()){
+                searchResult = target.get(i);
             }
         }
-        return ret;
+        return searchResult;
     }
 }
