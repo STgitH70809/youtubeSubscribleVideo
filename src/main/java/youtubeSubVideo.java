@@ -40,10 +40,11 @@ public class youtubeSubVideo {
     /** Global instance of the HTTP transport. */
     private static HttpTransport HTTP_TRANSPORT;
 
+
     /** Global instance of the scopes required by this quickstart.
      *
      * If modifying these scopes, delete your previously saved credentials
-     * at ~/.credentials/drive-java-quickstart
+     * at ~/.credentials
      */
     private static final List<String> SCOPES =
             Arrays.asList(YouTubeScopes.YOUTUBE_READONLY);
@@ -110,9 +111,10 @@ public class youtubeSubVideo {
                 for (Subscription channel: response.getItems()) {
                     YouTube.Search.List videos = youtube.search().list(parameters.get("vid").toString());
                     videos.setChannelId(channel.getSnippet().getResourceId().getChannelId());
+                    videos.setMaxResults(Long.parseLong("50"));//?????
 
                     SearchListResponse videoResponse = videos.execute();
-                    SearchResult  latestVideo = videoResponse.getItems().get(videoResponse.getItems().size() -1);
+                    SearchResult  latestVideo = getLatestVideo(videoResponse.getItems());
 
                     System.out.println("________________________________________");
                     System.out.println("Channel title : "+ channel.getSnippet().getTitle());
@@ -128,5 +130,14 @@ public class youtubeSubVideo {
         } catch (Throwable t) {
             t.printStackTrace();
         }
+    }
+    public static SearchResult getLatestVideo(List<SearchResult> target){
+        SearchResult ret = target.get(0);
+        for(int i=1 ; i<target.size() ;i++){
+            if(ret.getSnippet().getPublishedAt().getValue() < target.get(i).getSnippet().getPublishedAt().getValue()){
+                ret = target.get(i);
+            }
+        }
+        return ret;
     }
 }
